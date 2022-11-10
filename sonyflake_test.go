@@ -140,6 +140,7 @@ func TestSonyflakeInParallel(t *testing.T) {
 		if _, ok := set[id]; ok {
 			t.Fatal("duplicated id")
 		}
+		t.Log(id)
 		set[id] = struct{}{}
 	}
 	fmt.Println("number of id:", len(set))
