@@ -39,15 +39,17 @@ type Settings struct {
 	StartTime      time.Time
 	MachineID      func() (uint16, error)
 	CheckMachineID func(uint16) bool
+	Sequence       func() uint16
 }
 
 // Sonyflake is a distributed unique ID generator.
 type Sonyflake struct {
-	mutex       *sync.Mutex
-	startTime   int64
-	elapsedTime int64
-	sequence    uint16
-	machineID   uint16
+	mutex        *sync.Mutex
+	startTime    int64
+	elapsedTime  int64
+	sequence     uint16
+	machineID    uint16
+	sequenceFunc func() uint16
 }
 
 // NewSonyflake returns a new Sonyflake configured with the given Settings.
@@ -60,11 +62,15 @@ func NewSonyflake(st Settings) *Sonyflake {
 	sf.mutex = new(sync.Mutex)
 	sf.sequence = uint16(1<<BitLenSequence - 1)
 
+	if st.Sequence == nil {
+		sf.sequenceFunc = func() uint16 { return 0 }
+	}
+
 	if st.StartTime.After(time.Now()) {
 		return nil
 	}
 	if st.StartTime.IsZero() {
-		sf.startTime = toSonyflakeTime(time.Date(2014, 9, 1, 0, 0, 0, 0, time.UTC))
+		sf.startTime = toSonyflakeTime(time.Date(2022, 11, 11, 0, 0, 0, 0, time.Local))
 	} else {
 		sf.startTime = toSonyflakeTime(st.StartTime)
 	}
@@ -93,13 +99,13 @@ func (sf *Sonyflake) NextID() (uint64, error) {
 	current := currentElapsedTime(sf.startTime)
 	if sf.elapsedTime < current {
 		sf.elapsedTime = current
-		sf.sequence = 0
+		sf.sequence = sf.sequenceFunc()
 	} else { // sf.elapsedTime >= current
 		sf.sequence = (sf.sequence + 1) & maskSequence
 		if sf.sequence == 0 {
 			sf.elapsedTime++
 			overtime := sf.elapsedTime - current
-			time.Sleep(sleepTime((overtime)))
+			time.Sleep(sleepTime(overtime))
 		}
 	}
 
