@@ -47,8 +47,8 @@ type Sonyflake struct {
 	mutex        *sync.Mutex
 	startTime    int64
 	elapsedTime  int64
-	machineID    uint16
 	sequence     uint16
+	machineID    uint16
 	sequenceFunc func() uint16
 }
 
