@@ -3,8 +3,8 @@
 // A Sonyflake ID is composed of
 //
 //	39 bits for time in units of 10 msec
-//	 8 bits for a sequence number
 //	16 bits for a machine id
+//	 8 bits for a sequence number
 package sonyflake
 
 import (
@@ -16,9 +16,9 @@ import (
 
 // These constants are the bit lengths of Sonyflake ID parts.
 const (
-	BitLenTime      = 39                               // bit length of time
-	BitLenSequence  = 8                                // bit length of sequence number
-	BitLenMachineID = 63 - BitLenTime - BitLenSequence // bit length of machine id
+	BitLenTime      = 39                                // bit length of time
+	BitLenMachineID = 8                                 // bit length of machine id
+	BitLenSequence  = 63 - BitLenTime - BitLenMachineID // bit length of sequence number
 )
 
 // Settings configures Sonyflake:
@@ -47,8 +47,8 @@ type Sonyflake struct {
 	mutex        *sync.Mutex
 	startTime    int64
 	elapsedTime  int64
-	sequence     uint16
 	machineID    uint16
+	sequence     uint16
 	sequenceFunc func() uint16
 }
 
@@ -133,8 +133,8 @@ func (sf *Sonyflake) toID() (uint64, error) {
 	}
 
 	return uint64(sf.elapsedTime)<<(BitLenSequence+BitLenMachineID) |
-		uint64(sf.sequence)<<BitLenMachineID |
-		uint64(sf.machineID), nil
+		uint64(sf.machineID)<<BitLenSequence |
+		uint64(sf.sequence), nil
 }
 
 func privateIPv4() (net.IP, error) {
