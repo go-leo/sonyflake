@@ -62,9 +62,8 @@ func NewSonyflake(st Settings) *Sonyflake {
 	sf.mutex = new(sync.Mutex)
 	sf.sequence = uint16(1<<BitLenSequence - 1)
 
-	if st.Sequence == nil {
-		sf.sequenceFunc = func() uint16 { return 0 }
-	} else {
+	sf.sequenceFunc = func() uint16 { return 0 }
+	if st.Sequence != nil {
 		sf.sequenceFunc = st.Sequence
 	}
 
