@@ -27,7 +27,7 @@ Installation
 ------------
 
 ```
-go get github.com/sony/sonyflake
+go get github.com/go-leo/sonyflake
 ```
 
 Usage

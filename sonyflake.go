@@ -3,8 +3,8 @@
 // A Sonyflake ID is composed of
 //
 //	39 bits for time in units of 10 msec
-//	 8 bits for a sequence number
 //	16 bits for a machine id
+//	 8 bits for a sequence number
 package sonyflake
 
 import (
@@ -16,9 +16,9 @@ import (
 
 // These constants are the bit lengths of Sonyflake ID parts.
 const (
-	BitLenTime      = 39                               // bit length of time
-	BitLenSequence  = 8                                // bit length of sequence number
-	BitLenMachineID = 63 - BitLenTime - BitLenSequence // bit length of machine id
+	BitLenTime      = 39                                // bit length of time
+	BitLenMachineID = 16                                // bit length of machine id
+	BitLenSequence  = 63 - BitLenTime - BitLenMachineID // bit length of sequence number
 )
 
 // Settings configures Sonyflake:
@@ -39,15 +39,17 @@ type Settings struct {
 	StartTime      time.Time
 	MachineID      func() (uint16, error)
 	CheckMachineID func(uint16) bool
+	Sequence       func() uint16
 }
 
 // Sonyflake is a distributed unique ID generator.
 type Sonyflake struct {
-	mutex       *sync.Mutex
-	startTime   int64
-	elapsedTime int64
-	sequence    uint16
-	machineID   uint16
+	mutex        *sync.Mutex
+	startTime    int64
+	elapsedTime  int64
+	machineID    uint16
+	sequence     uint16
+	sequenceFunc func() uint16
 }
 
 // NewSonyflake returns a new Sonyflake configured with the given Settings.
@@ -60,11 +62,15 @@ func NewSonyflake(st Settings) *Sonyflake {
 	sf.mutex = new(sync.Mutex)
 	sf.sequence = uint16(1<<BitLenSequence - 1)
 
+	if st.Sequence != nil {
+		sf.sequenceFunc = func() uint16 { return 0 }
+	}
+
 	if st.StartTime.After(time.Now()) {
 		return nil
 	}
 	if st.StartTime.IsZero() {
-		sf.startTime = toSonyflakeTime(time.Date(2014, 9, 1, 0, 0, 0, 0, time.UTC))
+		sf.startTime = toSonyflakeTime(time.Date(2022, 11, 10, 0, 0, 0, 0, time.Local))
 	} else {
 		sf.startTime = toSonyflakeTime(st.StartTime)
 	}
@@ -93,13 +99,13 @@ func (sf *Sonyflake) NextID() (uint64, error) {
 	current := currentElapsedTime(sf.startTime)
 	if sf.elapsedTime < current {
 		sf.elapsedTime = current
-		sf.sequence = 0
+		sf.sequence = sf.sequenceFunc()
 	} else { // sf.elapsedTime >= current
 		sf.sequence = (sf.sequence + 1) & maskSequence
 		if sf.sequence == 0 {
 			sf.elapsedTime++
 			overtime := sf.elapsedTime - current
-			time.Sleep(sleepTime((overtime)))
+			time.Sleep(sleepTime(overtime))
 		}
 	}
 
@@ -127,8 +133,8 @@ func (sf *Sonyflake) toID() (uint64, error) {
 	}
 
 	return uint64(sf.elapsedTime)<<(BitLenSequence+BitLenMachineID) |
-		uint64(sf.sequence)<<BitLenMachineID |
-		uint64(sf.machineID), nil
+		uint64(sf.machineID)<<BitLenSequence |
+		uint64(sf.sequence), nil
 }
 
 func privateIPv4() (net.IP, error) {
