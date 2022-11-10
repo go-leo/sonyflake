@@ -70,7 +70,7 @@ func NewSonyflake(st Settings) *Sonyflake {
 		return nil
 	}
 	if st.StartTime.IsZero() {
-		sf.startTime = toSonyflakeTime(time.Date(2022, 11, 11, 0, 0, 0, 0, time.Local))
+		sf.startTime = toSonyflakeTime(time.Date(2022, 11, 10, 0, 0, 0, 0, time.Local))
 	} else {
 		sf.startTime = toSonyflakeTime(st.StartTime)
 	}
