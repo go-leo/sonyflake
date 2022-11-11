@@ -17,7 +17,7 @@ import (
 // These constants are the bit lengths of Sonyflake ID parts.
 const (
 	BitLenTime      = 39                                // bit length of time
-	BitLenMachineID = 16                                // bit length of machine id
+	BitLenMachineID = 8                                 // bit length of machine id
 	BitLenSequence  = 63 - BitLenTime - BitLenMachineID // bit length of sequence number
 )
 
