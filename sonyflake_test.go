@@ -122,14 +122,14 @@ func TestSonyflakeInParallel(t *testing.T) {
 
 	consumer := make(chan uint64)
 
-	const numID = 10000000
+	const numID = 10000
 	generate := func() {
 		for i := 0; i < numID; i++ {
 			consumer <- nextID(t)
 		}
 	}
 
-	const numGenerator = 100
+	const numGenerator = 10
 	for i := 0; i < numGenerator; i++ {
 		go generate()
 	}
@@ -140,7 +140,6 @@ func TestSonyflakeInParallel(t *testing.T) {
 		if _, ok := set[id]; ok {
 			t.Fatal("duplicated id")
 		}
-		t.Log(id)
 		set[id] = struct{}{}
 	}
 	fmt.Println("number of id:", len(set))

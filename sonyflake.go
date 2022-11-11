@@ -3,8 +3,8 @@
 // A Sonyflake ID is composed of
 //
 //	39 bits for time in units of 10 msec
-//	16 bits for a machine id
-//	 8 bits for a sequence number
+//	12 bits for a machine id
+//	 12 bits for a sequence number
 package sonyflake
 
 import (
@@ -17,7 +17,7 @@ import (
 // These constants are the bit lengths of Sonyflake ID parts.
 const (
 	BitLenTime      = 39                                // bit length of time
-	BitLenMachineID = 8                                 // bit length of machine id
+	BitLenMachineID = 12                                // bit length of machine id
 	BitLenSequence  = 63 - BitLenTime - BitLenMachineID // bit length of sequence number
 )
 
@@ -169,7 +169,7 @@ func lower16BitPrivateIP() (uint16, error) {
 		return 0, err
 	}
 
-	return uint16(ip[2])<<8 + uint16(ip[3]), nil
+	return (uint16(ip[2])<<8 + uint16(ip[3])) % (1<<BitLenMachineID - 1), nil
 }
 
 // ElapsedTime returns the elapsed time when the given Sonyflake ID was generated.
@@ -183,14 +183,14 @@ func elapsedTime(id uint64) uint64 {
 
 // SequenceNumber returns the sequence number of a Sonyflake ID.
 func SequenceNumber(id uint64) uint64 {
-	const maskSequence = uint64((1<<BitLenSequence - 1) << BitLenMachineID)
-	return id & maskSequence >> BitLenMachineID
+	const maskSequence = uint64(1<<BitLenSequence - 1)
+	return id & maskSequence
 }
 
 // MachineID returns the machine ID of a Sonyflake ID.
 func MachineID(id uint64) uint64 {
-	const maskMachineID = uint64(1<<BitLenMachineID - 1)
-	return id & maskMachineID
+	const maskMachineID = uint64((1<<BitLenSequence - 1) << BitLenMachineID)
+	return id & maskMachineID >> BitLenMachineID
 }
 
 // Decompose returns a set of Sonyflake ID parts.
